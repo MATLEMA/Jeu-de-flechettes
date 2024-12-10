@@ -1,0 +1,131 @@
+@import url(bootstrap-grid.css);
+@import url(bootstrap-grid.min.css);
+@import url(bootstrap-reboot.css);
+@import url(bootstrap-reboot.min.css);
+@import url(bootstrap.css);
+@import url(bootstrap.min.css);
+@import url(all.css);
+
+* {
+    box-sizing: border-box;
+}
+html {
+    width: 100%;
+    height: 100%;
+}
+body {
+    overflow-x: hidden;
+}
+
+.lien { 
+    color: #4E4E4E;
+    display: flex;
+    vertical-align: middle;
+    text-decoration: none;
+} 
+
+#partie {
+    width: max-content;
+}
+.lien:hover{
+    color: #000000;
+}
+
+#brand:hover {
+    color: inherit;
+}
+
+
+
+li {
+    text-align: center;
+    align-content: center;
+}
+ul {
+    list-style-type: none;
+  }
+
+#header{
+    background: linear-gradient(to bottom, rgb(255, 255, 255) 0%, rgba(255, 255, 255, 0.98) 100%);;
+    border-bottom: 2px solid #F1F2F3;
+}
+
+.foote_bottom_ul_amrc {
+    list-style-type: none;
+    padding: 0px;
+    display: table;
+    margin-top: 10px;
+    margin-right: auto;
+    margin-bottom: 10px;
+    margin-left: auto;
+    text-align: center;
+    align-content: center;
+}
+.foote_bottom_ul_amrc li { display:inline;}
+.foote_bottom_ul_amrc li a { color:#999; margin:0 12px;}
+
+#chat {
+    border: 1px solid #4E4E4E;
+}
+
+#sidebar {
+    z-index: 1030;
+    top: 58px;
+}
+#header {
+    z-index: 1040;
+}
+main {
+    z-index: 1020;
+}
+
+@media (min-width: 0px) { 
+    #sidebar{
+        background-color: white;
+        border-bottom: 2px solid #F1F2F3;
+    }
+    #footer {
+        background-color: white;
+        border-top: 2px solid #F1F2F3;
+    }
+    #chat {
+        height: 350px;
+    }
+ }
+
+@media (min-width: 576px) { 
+    
+}
+
+@media (min-width: 768px) { 
+    #sidebar{
+        background-color: white;
+        border-right: 2px solid #F1F2F3;
+        border-bottom: none;
+        max-width: 120px;
+        height: 100vh;
+    }
+    #chat {
+        min-width: 170px;
+    }
+ }
+
+@media (min-width: 992px) { 
+    
+ }
+
+@media (min-width: 1200px) { 
+    
+ }
+
+#messages {
+    flex: 1;
+    overflow-y: auto;
+}
+
+#message-input {
+    flex: 1;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}

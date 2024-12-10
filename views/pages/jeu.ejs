@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cibleEDART</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script type='module' src="/src/main.js"></script>
+    <script src="https://npmcdn.com/tether@1.2.4/dist/js/tether.min.js"></script>
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/popper.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    <%- include('../partials/header.ejs'); %>
+    <div class="p-0 container-fluid">
+        <div class="row justify-content-center justify-content-md-start flex-column flex-md-row m-0">
+            <%- include('../partials/sidebar.ejs'); %>
+            <main class="d-flex m-0 p-0 row col-12 flex-column flex-lg-row justify-content-md-center align-items-center col-md-10 col-xxl-11 flex-grow-1">
+                <div class="p-0 col-12 col-md-6" id="partie">
+                    <div class="p-0 d-flex justify-content-center">
+                        <svg id="afficheur" viewBox="0 0 500 100" style="width: 504px;height: 104px"></svg>
+                    </div>
+                    <div class="d-flex justify-content-center">
+                        <svg id="cible" viewBox="0 0 500 500" style="width: 504px;height: 504px"></svg>
+                    </div>
+                </div>
+                <div id="separateur" class="p-0 col-12 col-md-0"></div>
+                <div id="chat" class="d-flex p-0 col-12 mt-1 flex-column">
+                    <ul id="messages" class="flex-column p-2"></ul>
+                    <form id="chat-form" class="text-center">
+                        <input type="text" id="input" placeholder="Tapez votre message..." class="form-control">
+                        <button class="btn btn-outline-primary my-2" id="envoyer">Envoyer</button>
+                    </form>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <%- include('../partials/footer.ejs'); %>
+
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.dev.js"></script>
+<script>
+    const socket = io()
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('input');
+    const messages = document.getElementById('messages')
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (input.value) {
+            socket.emit('chat message', input.value);
+            input.value = '';
+        }
+    });
+
+    socket.on('chat message', (msg) => {
+        const item = document.createElement('li');
+        item.textContent = msg;
+        messages.appendChild(item);
+        if (messages) {
+            messages.scrollTop = messages.scrollHeight
+        }
+    });
+
+</script>
+
+</html>
