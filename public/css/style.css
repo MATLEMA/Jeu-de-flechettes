@@ -136,3 +136,11 @@ main {
         height: inherit
     }
 }
+
+#start-btn {
+    max-width: 136px;
+}
+
+#chat-form #input {
+    max-width: 90%;
+}
