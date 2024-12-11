@@ -17,11 +17,11 @@
     <%- include('../partials/header.ejs'); %>
     <div class="p-0 container-fluid">
         <div class="row">
-            <form id="login_form" class="d-flex justify-content-center flex-column align-items-center my-3">
+            <form action="/login" id="login_form" class="d-flex justify-content-center flex-column align-items-center my-3">
                 <div class="form-outline mb-4">
                     <label for="username" class="form-label">Ton nom:</label>
                     <input type="text" id="username" name="username" class="form-control"></input>
-                    <h6 id="username-erreur" style="text-align: center;color: red;" hidden>Veuillez saisir un bon nom d'utilisateur!</h6>
+                    <h6 id="username-erreur" style="text-align: center;color: red;"></h6>
                 </div>
                 <input type="submit" value="Se connecter" class="btn btn-primary btn-block mb-4"></input>
             </form>
@@ -29,33 +29,5 @@
     </div>
 
     <%- include('../partials/footer.ejs'); %>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.dev.js"></script>
-<script>
-    const socket = io();
-    const usernameForm = document.getElementById('login_form');
-    const input = document.getElementById('username');
-
-    usernameForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        if (input.value) {
-            username = input.value
-            socket.emit('join', username);
-        }
-    });
-
-    socket.on('reponse', (msg) => {
-        if (msg == "AlreadyExist" | msg == "NonCorrect") { // TODO
-            document.getElementById(username-erreur).style.visibility='visible'
-        } else {
-            document.getElementById(username-erreur).style.visibility='hidden'
-        }
-    });
-
-    socket.on('redirect', function(destination) {
-        window.location.href = destination;
-    });
-</script>
 </body>
-
 </html>
