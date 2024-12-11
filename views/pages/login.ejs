@@ -17,10 +17,10 @@
     <%- include('../partials/header.ejs'); %>
     <div class="p-0 container-fluid">
         <div class="row">
-            <form action="/login" id="login_form" class="d-flex justify-content-center flex-column align-items-center my-3">
+            <form method="POST" action="/login" id="login_form" class="d-flex justify-content-center flex-column align-items-center my-3">
                 <div class="form-outline mb-4">
                     <label for="username" class="form-label">Ton nom:</label>
-                    <input type="text" id="username" name="username" class="form-control"></input>
+                    <input type="text" id="username" name="username" class="form-control" maxlength="30"></input>
                     <h6 id="username-erreur" style="text-align: center;color: red;"></h6>
                 </div>
                 <input type="submit" value="Se connecter" class="btn btn-primary btn-block mb-4"></input>
@@ -30,4 +30,5 @@
 
     <%- include('../partials/footer.ejs'); %>
 </body>
+</script>
 </html>
