@@ -40,7 +40,20 @@ app.get("/jeu", (req, res) => {
     }
 });
 
-/* Dictionnaire des utilisateurs */
+/* Dictionnaire des utilisateurs 
+    ex: 
+        utilisateurs = {
+            "cbf87ed0-977d-407d-8078-d4291ffbcc1e": {
+                "username": "mathéo",
+                "socket.id": "Y5Pg7qO3oRMXJ9BXAAAB"
+            },
+            "64ccbedc-47b7-4b95-9c6b-bf965fcfaaa6": {
+                "username": "toto",
+                "socket.id": "kGqLN1Rn1T3EFYPcAAAC"
+            }
+        }
+
+*/
 var utilisateurs = {}
 
 /* Gère les noms d'utilisateurs */
@@ -74,6 +87,42 @@ app.all('*', (req, res) => {
 
 /************************ SOCKET.IO LOGIQUE *************************/
 
+/* Listes des rooms
+    ex :
+    rooms = {
+        "room-0": {
+            "joueurs" : ["cbf87ed0-977d-407d-8078-d4291ffbcc1e", 64ccbedc-47b7-4b95-9c6b-bf965fcfaaa6],
+        },
+        "room-1": {
+            "joueurs" : ["7069a2b1-4a85-4507-9ccd-5cfe773084c0", 14c6156edc-47e7-4bg5-9c1b-bf961651aaa6],
+        },
+    }
+ */
+var maxPlayerPerRoom = 4
+var rooms = {}
+var roomNumber = 0
+
+roomsManager = (uuid) => {
+    for (let i in rooms) {
+        if (rooms[i]["joueurs"].length < maxPlayerPerRoom) {
+            rooms[i]["joueurs"].push(uuid)
+            return i
+        }
+    }
+    // Si aucune room n'est disponible
+    rooms[`room-${roomNumber}`] = {joueurs: [uuid]}
+    roomNumber++
+    return `room-${roomNumber - 1}`
+}
+
+locateJoueursRooms = (uuid) => {
+    for (let key in rooms) {
+        if (rooms[key]["joueurs"].includes(uuid)) {
+            return key
+        }
+    }
+    return null
+}
 io.on("connection", (utilisateur) => {
 
     utilisateur.on("join", (uuid) => {
@@ -81,27 +130,43 @@ io.on("connection", (utilisateur) => {
         utilisateurs[uuid]["socket.id"] = utilisateur.id
         console.log(`${username} s'est connecté`);
         utilisateur.emit("redirect", "/jeu");
+        utilisateur.join(roomsManager(uuid));
     });
 
     utilisateur.on("chat message", (object) => {
         var uuid = object["sender"]
         var msg = object["msg"]
         var username = utilisateurs[uuid]["username"]
-        console.log(`message: ${username}> ${msg}`);
-        io.emit("chat message", `${username}> ${msg}`);
+        console.log(`message dans (${locateJoueursRooms(uuid)}): ${username}> ${msg}`);
+        io.in(locateJoueursRooms(uuid)).emit("chat message", `${username}> ${msg}`);
     });
 
     utilisateur.on('disconnect', () => {
-        var username = null
         for (const key in utilisateurs) {
             if (utilisateurs[key]["socket.id"] == utilisateur.id) {
-                var username = utilisateurs[key]["username"]
+                var uuid = key
+                break
             }
         }
-        console.log(`${username} s'est deconnecté`);
-        delete utilisateurs[utilisateur.id]
+        if (!utilisateurs[uuid]) {
+            return
+        }
+        console.log(`${utilisateurs[uuid]["username"]} s'est deconnecté`);
+        var roomJoueur = locateJoueursRooms(uuid)
+        var positionJoueurRoom = rooms[roomJoueur]["joueurs"].indexOf(uuid)
+        if (positionJoueurRoom > -1) {
+            rooms[roomJoueur]["joueurs"].splice(positionJoueurRoom, 1);
+        }
+        delete utilisateurs[uuid]
+
+        if (rooms[roomJoueur]["joueurs"].length == 0) {
+            delete rooms[roomJoueur]
+        }
     })
 });
+
+/************************ ROOM HANDLING *************************/
+
 
 /************************ LISTENING *************************/
 server.listen(8080);
