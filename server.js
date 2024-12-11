@@ -140,6 +140,10 @@ io.on("connection", (utilisateur) => {
     });
 
     utilisateur.on("chat message", (object) => {
+        if (!utilisateurs[uuid]) {
+            utilisateur.emit("redirect", "/");
+            return
+        }
         var uuid = object["sender"]
         var msg = object["msg"]
         var username = utilisateurs[uuid]["username"]

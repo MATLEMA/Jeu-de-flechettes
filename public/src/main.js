@@ -9,10 +9,7 @@ import { Afficheur } from './utils/afficheur.js';
 export function main() {
 
     const objetCible = new Cible("cible");
-    const vibration = new Vibration(objetCible);
-
-    const afficheur = new Afficheur("afficheur")
-    new Partie(objetCible, vibration, afficheur);
+    new Vibration(objetCible);
 }
 
 // Attend que l'html soit load
