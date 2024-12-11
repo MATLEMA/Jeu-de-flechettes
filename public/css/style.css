@@ -104,11 +104,12 @@ main {
         border-bottom: none;
         max-width: 120px;
         height: 100vh;
+        min-height: 100%
     }
     #chat {
         min-width: 170px;
     }
- }
+}
 
 @media (min-width: 992px) { 
     
@@ -128,4 +129,18 @@ main {
     padding: 5px;
     border: 1px solid #ccc;
     border-radius: 5px;
+}
+
+@media (min-height: 1000px) { 
+    #sidebar{
+        height: inherit
+    }
+}
+
+#start-btn {
+    max-width: 136px;
+}
+
+#chat-form #input {
+    max-width: 90%;
 }

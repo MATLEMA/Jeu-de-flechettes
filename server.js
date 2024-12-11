@@ -91,10 +91,12 @@ app.all('*', (req, res) => {
     ex :
     rooms = {
         "room-0": {
-            "joueurs" : ["cbf87ed0-977d-407d-8078-d4291ffbcc1e", 64ccbedc-47b7-4b95-9c6b-bf965fcfaaa6],
+            "joueurs": ["cbf87ed0-977d-407d-8078-d4291ffbcc1e", 64ccbedc-47b7-4b95-9c6b-bf965fcfaaa6],
+            "status": "attente" | "enJeu" | "fin"
         },
         "room-1": {
             "joueurs" : ["7069a2b1-4a85-4507-9ccd-5cfe773084c0", 14c6156edc-47e7-4bg5-9c1b-bf961651aaa6],
+            "status": "attente" | "enJeu" | "fin"
         },
     }
  */
@@ -126,6 +128,10 @@ locateJoueursRooms = (uuid) => {
 io.on("connection", (utilisateur) => {
 
     utilisateur.on("join", (uuid) => {
+        if (!utilisateurs[uuid]) {
+            utilisateur.emit("redirect", "/");
+            return
+        }
         var username = utilisateurs[uuid]["username"]
         utilisateurs[uuid]["socket.id"] = utilisateur.id
         console.log(`${username} s'est connecté`);
@@ -140,7 +146,10 @@ io.on("connection", (utilisateur) => {
         console.log(`message dans (${locateJoueursRooms(uuid)}): ${username}> ${msg}`);
         io.in(locateJoueursRooms(uuid)).emit("chat message", `${username}> ${msg}`);
     });
-
+    
+    // Il se peut que l'utilisateur se déconnecte un bref instant (reload de la page) 
+    // Après reload il y a une chance que l'utilisateur perde sa session
+    // TODO attendre quelques secondes avant de détruire la session
     utilisateur.on('disconnect', () => {
         for (const key in utilisateurs) {
             if (utilisateurs[key]["socket.id"] == utilisateur.id) {
