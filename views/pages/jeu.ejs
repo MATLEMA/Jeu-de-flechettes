@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cibleEDART</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script type='module' src="/src/main.js"></script>
+    <script src="https://npmcdn.com/tether@1.2.4/dist/js/tether.min.js"></script>
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/popper.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    <%- include('../partials/header.ejs'); %>
+    <div class="p-0 container-fluid">
+        <div class="row justify-content-center justify-content-md-start flex-column flex-md-row m-0">
+            <%- include('../partials/sidebar.ejs'); %>
+            <main class="d-flex m-0 p-0 row col-12 flex-column align-items-center col-md-10 col-xxl-11 flex-grow-1 justify-content-start">
+                <div class="p-0 col-12 col-md-6 container" id="partie">
+                    <div id="afficheur" style="width: 504px;height: 104px" class="row">
+                        <ul id="listeJoueur" class="m-0 p-0 col-4 align-self-start">
+                        </ul>
+                        <div class="col-4 align-self-center d-flex flex-column align-items-center">
+                            <span>Au tour de <span id="tourDe"></span></span>
+                            <span>Score : <span id="score"></span></span>
+                            <span id="intituleScore"></span>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-center">
+                        <svg id="cible" viewBox="0 0 500 500" style="width: 504px;height: 504px"></svg>
+                    </div>
+                </div>
+                <button class="btn btn-primary my-2" id="start-btn">Lancer la partie</button>
+                <div id="chat" class="d-flex p-0 col-12 mt-1 flex-column">
+                    <ul id="messages" class="flex-column p-2"></ul>
+                    <form id="chat-form" class="text-center">
+                        <input type="text" id="input" placeholder="Tapez votre message..." class="form-control m-auto">
+                        <button class="btn btn-outline-primary my-2" id="envoyer">Envoyer</button>
+                    </form>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <%- include('../partials/footer.ejs'); %>
+
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.dev.js"></script>
+<script>
+    const socket = io()
+    const form = document.getElementById("chat-form");
+    const input = document.getElementById("input");
+    const messages = document.getElementById("messages")
+    const startBtn = document.getElementById("start-btn")
+    const listeJoueur = document.getElementById("listeJoueur")
+    const tourDe = document.getElementById("tourDe")
+    const cible = document.getElementById("cible")
+    const scoreDOM = document.getElementById("score")
+    const scoreIntituleDOM = document.getElementById("intituleScore")
+
+
+    // Cherche l'uuid dans les cookies
+    var cookieString = document.cookie
+    var cookieArray = cookieString.split(";");
+    var uuid = null
+    
+    uuid = cookieArray.find((valeur) => valeur.trim().startsWith("uuid="))
+    uuid = uuid.replace("uuid=", "").trim()
+    socket.emit("join", uuid)
+
+    socket.on("redirect", (destination) => {
+        window.location.href = destination;
+    })
+
+    form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (input.value) {
+            socket.emit("chat message", {
+                msg: input.value,
+                sender: uuid
+            });
+            input.value = "";
+        }
+    });
+
+    socket.on("chat message", (msg) => {
+        const item = document.createElement("li");
+        item.textContent = msg;
+        messages.appendChild(item);
+        if (messages) {
+            messages.scrollTop = messages.scrollHeight
+        }
+    });
+
+    hideStartBtn = () => {
+        console.log("hide")
+        startBtn.style.visibility='hidden'
+    }
+
+    startBtn.addEventListener("click", () => {
+        console.log("click")
+        socket.emit("start", uuid)
+    }, {once : true})
+
+    socket.on("start", () => {
+        hideStartBtn()
+    })
+
+    socket.on("tourDe", (auTourDe) => {
+        tourDe.textContent = auTourDe;
+    })
+
+    socket.on("liste-joueurs", (donnees) => {
+        listeJoueur.textContent = "";
+        console.log(donnees);
+        for (let joueur in donnees) {
+            const ligne = document.createElement("li");
+            ligne.textContent = `${donnees[joueur]}: `;
+            const score = document.createElement("span");
+            score.id = donnees[joueur];
+            listeJoueur.appendChild(ligne);
+            ligne.appendChild(score)
+        }
+    })
+
+    socket.on("modifier-score", (id, score) => {
+        var span = document.getElementById(id);
+        console.log(id, score)
+        if (!span) return;
+
+        span.textContent = score
+    })
+
+    socket.on("tonTour", () => {
+        const envoyerPosition = (event) => {
+            console.log(event)
+            const position = [event.offsetX - vibration.decalageX, event.offsetY - vibration.decalageY];
+            socket.emit("positionClick", [objetCible.milieuCible, objetCible.rayonMax, position, objetCible.informationScale]);
+            cible.removeEventListener("click", envoyerPosition);
+        };
+
+        cible.addEventListener("click", envoyerPosition, { once: true });
+    });
+
+    socket.on("score", (score, multiplicateur, intitule) => {
+        scoreDOM.textContent = score * multiplicateur
+        scoreIntituleDOM.textContent = `${intitule} ${score}`
+    })
+
+    socket.on("termine", (destination) => {
+        setTimeout(10000)
+        window.location.href = destination;
+    })
+
+</script>
+
+</html>
