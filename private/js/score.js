@@ -4,21 +4,24 @@
  * @param {number[]} position 
  * @returns {number[]}
  */
-export function getScore(cible, position) {
+function getScore(milieuCible, cibleRayonMax, position, informationScale) {
+    if (milieuCible == -1) {
+        return [0, 0, false, "En dehors"];
+    }
     let [xa, ya] = position;
-    let [xb, yb] = cible.milieuCible;
-    let rayonMax = cible.scaleDouble * cible.rayonMax;
-    let rayonDouble = cible.scaleSimpleExterieur * cible.rayonMax;
-    let rayonSimpleExterieur = cible.scaleTriple * cible.rayonMax;
-    let rayonTriple = cible.scaleSimpleInterieur * cible.rayonMax;
-    let rayonSimpleInterieur = cible.scaleBullEye * cible.rayonMax;
-    let rayonBullEye = cible.scaleDoubleBullEye * cible.rayonMax;
-    let decalageDegreCible = cible.decalageDegreCible;
-    let possibiliteScore = cible.score;
+    let [xb, yb] = milieuCible;
+    let rayonMax = informationScale["scaleDouble"] * cibleRayonMax;
+    let rayonDouble = informationScale["scaleSimpleExterieur"] * cibleRayonMax;
+    let rayonSimpleExterieur = informationScale["scaleTriple"] * cibleRayonMax;
+    let rayonTriple = informationScale["scaleSimpleInterieur"] * cibleRayonMax;
+    let rayonSimpleInterieur = informationScale["scaleBullEye"] * cibleRayonMax;
+    let rayonBullEye = informationScale["scaleDoubleBullEye"] * cibleRayonMax;
+    let decalageDegreCible = 8
+    let possibiliteScore = Array(6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5, 20, 1, 18, 4, 13)
 
     // Calcule des coordonnées polaires
     let distanceEntrePoints = Math.sqrt(Math.pow(xb - xa, 2) + Math.pow(yb - ya, 2));
-    let angle = ((Math.atan2((ya - yb), (xa - xb)) * 180 / Math.PI) + decalageDegreCible + 360) % 360;
+    let angle = ((Math.atan2((ya - yb), (xa - xb)) * 180 / Math.PI) + decalageDegreCible + 180) % 360;
 
     if (distanceEntrePoints < rayonBullEye) {
         return [25, 2, true, "DoubleBulleye"];
@@ -49,3 +52,5 @@ export function getScore(cible, position) {
 
     return [0, 0, false, "En dehors"];
 }
+
+module.exports = getScore;

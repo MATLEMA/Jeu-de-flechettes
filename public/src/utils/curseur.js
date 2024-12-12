@@ -1,7 +1,8 @@
 export class Vibration {
     vibrationBool = false;
     #centreImage;
-
+    #decalageX;
+    #decalageY;
     constructor(objetCible) {
         var cible = document.getElementById("cible");
         this.objetCible = objetCible
@@ -45,8 +46,8 @@ export class Vibration {
             decalageY = decalageY * -1;
         };
 
-        this.decalageX = decalageX * (rayonMax * 0)
-        this.decalageY = decalageY * (rayonMax * 0)
+        this.#decalageX = decalageX * (rayonMax * 0)
+        this.#decalageY = decalageY * (rayonMax * 0)
         decalageX = this.#centreImage + decalageX * (rayonMax * 0);
         decalageY = this.#centreImage + decalageY * (rayonMax * 0);
 
@@ -61,6 +62,14 @@ export class Vibration {
     eteindreVibration() {
         this.vibrationBool = false;
     };
+
+    get decalageX() {
+        return this.#decalageX
+    }
+
+    get decalageY() {
+        return this.#decalageY
+    }
 
     async faireVibration() {
         while (this.vibrationBool) {

@@ -57,16 +57,23 @@
     const startBtn = document.getElementById("start-btn")
     const listeJoueur = document.getElementById("listeJoueur")
     const tourDe = document.getElementById("tourDe")
+    const cible = document.getElementById("cible")
+    const scoreDOM = document.getElementById("score")
+    const scoreIntituleDOM = document.getElementById("intituleScore")
 
 
     // Cherche l'uuid dans les cookies
     var cookieString = document.cookie
-    var cookieArray = cookieString.split(';');
+    var cookieArray = cookieString.split(";");
     var uuid = null
     
     uuid = cookieArray.find((valeur) => valeur.trim().startsWith("uuid="))
     uuid = uuid.replace("uuid=", "").trim()
     socket.emit("join", uuid)
+
+    socket.on("redirect", (destination) => {
+        window.location.href = destination;
+    })
 
     form.addEventListener("submit", (e) => {
         e.preventDefault();
@@ -78,10 +85,6 @@
             input.value = "";
         }
     });
-
-    socket.on("tourDe", (auTourDe) => {
-        tourDe.textContent = auTourDe
-    })
 
     socket.on("chat message", (msg) => {
         const item = document.createElement("li");
@@ -103,23 +106,55 @@
     }, {once : true})
 
     socket.on("start", () => {
-        console.log("clickbroadcast")
         hideStartBtn()
     })
 
+    socket.on("tourDe", (auTourDe) => {
+        tourDe.textContent = auTourDe;
+    })
+
     socket.on("liste-joueurs", (donnees) => {
-        listeJoueur = ""
+        listeJoueur.textContent = "";
+        console.log(donnees);
         for (let joueur in donnees) {
-            console.log(donnees[joueur])
-            const ligne = document.createElement("li")
-            ligne.textContent = `${donnees[joueur]}`
-            listeJoueur.appendChild(ligne)
+            const ligne = document.createElement("li");
+            ligne.textContent = `${donnees[joueur]}: `;
+            const score = document.createElement("span");
+            score.id = donnees[joueur];
+            listeJoueur.appendChild(ligne);
+            ligne.appendChild(score)
         }
     })
 
-    socket.on("redirect", (destination) => {
+    socket.on("modifier-score", (id, score) => {
+        var span = document.getElementById(id);
+        console.log(id, score)
+        if (!span) return;
+
+        span.textContent = score
+    })
+
+    socket.on("tonTour", () => {
+        const envoyerPosition = (event) => {
+            console.log(event)
+            const position = [event.offsetX - vibration.decalageX, event.offsetY - vibration.decalageY];
+            socket.emit("positionClick", [objetCible.milieuCible, objetCible.rayonMax, position, objetCible.informationScale]);
+            cible.removeEventListener("click", envoyerPosition);
+        };
+
+        cible.addEventListener("click", envoyerPosition, { once: true });
+    });
+
+    socket.on("score", (score, multiplicateur, intitule) => {
+        scoreDOM.textContent = score * multiplicateur
+        scoreIntituleDOM.textContent = `${intitule} ${score}`
+    })
+
+    socket.on("termine", (destination) => {
+        setTimeout(10000)
         window.location.href = destination;
     })
+
 </script>
 
 </html>

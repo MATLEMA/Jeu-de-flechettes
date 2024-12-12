@@ -1,4 +1,4 @@
-export class Joueur {
+class Joueur {
     #pseudo;
     #score;
     #uuid;
@@ -13,7 +13,7 @@ export class Joueur {
     }
 
     set score(score) {
-        if (score > 0){
+        if (score >= 0){
             this.#score = score;
         }
         // Ne fait rien si score à attribuer est inferieur à 0
@@ -39,3 +39,5 @@ export class Joueur {
         return this.#pseudo;
     }
 }
+
+module.exports = Joueur;

@@ -7,7 +7,7 @@ export class Cible {
     #delayEnMs = 50;
     #rayonMax = 0;
     #milieu = Array(0, 0);
-
+    #informationScale
     #nombresSecteur = Array(6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5, 20, 1, 18, 4, 13)
     #ns = "http://www.w3.org/2000/svg";
     #skin
@@ -61,6 +61,10 @@ export class Cible {
 
     get score() {
         return this.#nombresSecteur
+    }
+
+    get informationScale() {
+        return this.#informationScale
     }
 
 
@@ -118,6 +122,17 @@ export class Cible {
         this.scaleSimpleInterieur = 0.42;
         this.scaleBullEye = 0.07;
         this.scaleDoubleBullEye = 0.03;
+
+        this.#informationScale = {
+            "scaleBordExterieur": this.scaleBordExterieur,
+            "scaleBordNombre": this.scaleBordNombre,
+            "scaleDouble": this.scaleDouble,
+            "scaleSimpleExterieur": this.scaleSimpleExterieur,
+            "scaleTriple": this.scaleTriple,
+            "scaleSimpleInterieur": this.scaleSimpleInterieur,
+            "scaleBullEye": this.scaleBullEye,
+            "scaleDoubleBullEye": this.scaleDoubleBullEye,
+        }
 
         this.#informationsZone = {
             "Bord": { "scaleExterieur": this.scaleBordNombre, "scaleInterieur": this.scaleDouble, "couleur": couleurBord, "couleurContour": couleurContourBord },

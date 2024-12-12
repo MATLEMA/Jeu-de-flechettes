@@ -1,17 +1,19 @@
-import { Joueur } from "./joueur.js";
-import { getScore } from "./score.js";
+const Joueur = require("./joueur.js")
+const getScore = require("./score.js")
 
-export class Partie {
+class Partie {
     #typePartie;
     #io
-    #listeJoueurs
+    #utilisateurs
     #joueurs
     #room
-    constructor(typePartie, io, listeJoueurs, room) {
+    #classement = []
+    constructor(typePartie, io, utilisateurs, room) {
         this.#io = io
         this.#typePartie = typePartie;
-        this.#listeJoueurs = listeJoueurs
+        this.#utilisateurs = utilisateurs
         this.#room = room
+        this.#joueurs = []
         this.#lancerPartie()
     };
 
@@ -47,8 +49,9 @@ export class Partie {
     async #lancerPartieX01(scoreDebut) {
 
         // Instanciation des joueurs
-        for (const [uuid, username] of Object.entries(this.#listeJoueurs)) {
-            this.#joueurs.push(Joueur(uuid, username, scoreDebut))
+        for (const [uuid, valeur] of Object.entries(this.#utilisateurs)) {
+            this.#joueurs.push(new Joueur(uuid, valeur["username"], scoreDebut))
+            this.#modifierScore(this.#joueurs.at(-1), scoreDebut)
         }
 
         var fini = false;
@@ -56,12 +59,47 @@ export class Partie {
         while (!fini) {
             nbrTours++;
             for (const index in this.#joueurs) {
-                var fini = await this.#volee(this.#joueurs[index])
-                if (fini == true){
+                if (this.#classement.includes(this.#joueurs[index])) {
+                    continue;
+                }
+
+                if (this.#classement.length == this.#joueurs.length) {
+                    fini = true
                     break
                 }
+
+                await this.#volee(this.#joueurs[index])
+
+                if (this.#joueurs[index].score == 0) {
+                    this.#updateClassement(this.#joueurs[index])
+                }
+            }
+            var testPartiePerdu = 0 // Si tout les scores sont <= 1 alors partie interminable les personnes à ont fini les personnes à 1 ne gagneront jamais
+            for (const index in this.#joueurs) {
+                if (this.#joueurs[index].score <= 1) {
+                    testPartiePerdu++
+                }
+            }
+            if (testPartiePerdu == this.#joueurs.length) {
+                fini = true
+                break
             }
         }
+        var ordre = ["premier", "deuxieme", "troisieme", "quatrième"]
+        for (const joueur in this.#classement) {
+            this.#io.in(this.#room).emit("chat message", `${this.#classement[joueur]} à fini ${ordre[joueur]}`)
+        }
+
+        let secondes = 10;
+        const timer = setInterval(() => {
+            secondes -= 1;
+            this.#io.in(this.#room).emit("chat message", `Partie terminé! Retour dans ${secondes}s`)
+
+            if (secondes <= 0) {
+                clearInterval(timer);
+                this.#io.in(this.#room).emit("termine", "/")
+            }
+        }, 1000);
     }
 
 
@@ -70,84 +108,83 @@ export class Partie {
      * Elle appelle les affichages des tours
      * Elle recoit la position puis traite le score associé
      * 
-     * @param {Array} joueurs 
-     * @param {Joueur} joueur 
+     * @param {Array} joueurs
+     * @param {Joueur} joueur
      * @returns 
      */
     async #volee(joueur){
         var valeursVolee = Array()
         this.#auTourDe(joueur)
-        // for (let i = 0; i < 3; i++) {
-        //     this.#scoresTotal(this.#joueurs)
-        //     var position = await this.#recevoirPosition();
-        //     var score = getScore(this.#cible, position);
-        //     valeursVolee.push(score)
-
-        //     this.#appliquerScore(joueur, score)
-
-        //     this.#updateClassement()
-
-        // }
+        for (let i = 0; i < 3; i++) {
+            try {
+                var utilisateur = this.#utilisateurs[joueur.uuid]["socket"]
+                var [position, rayonMax, milieuCible, informationScale] = await this.#recevoirPosition(utilisateur);
+                var score = getScore(milieuCible, rayonMax, position, informationScale);
+                valeursVolee.push(score)
+                this.#appliquerScore(joueur, score)
+                if (joueur.score == 0) {
+                    return
+                }
+            } catch(err) {
+                // utilisateur s'est déconnecté
+                break
+            }
+        }
     }
-
-    // async #lancerPartieCricket(){
-    //     var scoreAutorisee = Array(15, 16, 17, 18, 19, 20, 25, 50)
-    // }
-
     /**
      * Permet de recevoir la position du click dans un delai de 30s
      * @returns {number[]}
      */
-    // #recevoirPosition() {
-    //     /* Attend un event click sur la cible pendant 30s
-    //     la fonction renvoie la position du click
-    //     si il n'y a eu aucun click pdt 30s alors la position sera négative (incorrecte)
-    //     */
-    //     return new Promise((resolve) => {
+    async #recevoirPosition(utilisateur) {
+        /* Attend un event click sur la cible pendant 30s
+        la fonction renvoie la position du click
+        si il n'y a eu aucun click pdt 30s alors la position sera négative (incorrecte)
+        */
+        return new Promise((resolve) => {
+            const timeout = setTimeout(() => {
+                utilisateur.removeListener("positionClick", reponse);
+                resolve([-1, -1, -1, -1]);
+            }, 30000); // 30s
 
-    //         const finAttenteReponse = () => {
-    //             clearTimeout(timer);
-    //             resolve([-1, -1]);
-    //         };
+            const reponse = (donnees) => {
+                clearTimeout(timeout);
+                resolve(donnees);
+            };
 
-    //         const reponse = (event) => {
-    //             this.#cible.canvas.removeEventListener("click", reponse);
-    //             clearTimeout(timer);
-    //             resolve([event.offsetX - this.#vibration.decalageX, event.offsetY - this.#vibration.decalageY]);
-    //         };
-    //         var timer = setTimeout(finAttenteReponse, 30000); // 30s
-    //         this.#cible.canvas.addEventListener("click", reponse, { once: true });
-    //     })
-    // }
-
+            utilisateur.once("positionClick", reponse);
+            
+            utilisateur.emit("tonTour");
+        })
+    }
 
     /**
      * Applique le score reçu avec le score du joueur si possible
      * @param {Joueur} joueur 
      * @param {number[]} score 
      */
-    // #appliquerScore(joueur, score) {
-    //     // Il n'est pas possible de gagner un match si l'on arrive à 1
-    //     var [score, multiplicateur, estDouble, intitule] = score;
-    //     this.#afficheur.score(score, multiplicateur, intitule)
-    //     if (joueur.score - score * multiplicateur < 0) {
-    //         return;
-    //     }
-    //     if (joueur.score - score * multiplicateur == 0 & estDouble == true) {
-    //         joueur.score -= score * multiplicateur
-    //         return;
-    //     }
-    //     if (joueur.score - score * multiplicateur == 0 & estDouble == false) {
-    //         return;
-    //     }
+    #appliquerScore(joueur, score) {
+        // Il n'est pas possible de gagner un match si l'on arrive à 1
+        var [score, multiplicateur, estDouble, intitule] = score;
+        this.#io.in(this.#room).emit("score", score, multiplicateur, intitule)
+        if (joueur.score - score * multiplicateur < 0) {
+            return;
+        }
+        if (joueur.score - score * multiplicateur == 0 & estDouble == true) {
+            joueur.score -= score * multiplicateur
+            this.#modifierScore(joueur)
+            return;
+        }
+        if (joueur.score - score * multiplicateur == 0 & estDouble == false) {
+            return;
+        }
 
-    //     joueur.score -= score * multiplicateur;
-    // }
+        joueur.score -= score * multiplicateur;
+        this.#modifierScore(joueur)
+    }
 
-    // #updateClassement(joueurActuelle){
-    //     this.#classementJoueurs = this.#joueurs.slice()
-    //     this.#classementJoueurs.sort((joueur1, joueur2) => joueur1.score - joueur2.score);
-    // }
+    #updateClassement(joueur){
+        this.#classement.push(joueur)
+    }
 
     /**
      * Envoi à la vue des joueurs le tour d'un joueur
@@ -157,9 +194,13 @@ export class Partie {
         this.#io.in(this.#room).emit("tourDe", joueur.pseudo)
     }
     /**
-     * Envoi à la vue des joueurs tout les scores
+     * Envoi à la vue des joueurs un score à modifier
      */
-    #scoresTotal() {
-
+    #modifierScore(joueur, score) {
+        this.#io.in(this.#room).emit("modifier-score", joueur.pseudo, score ?? joueur.score)
     }
+
+    
 }
+
+module.exports = Partie;

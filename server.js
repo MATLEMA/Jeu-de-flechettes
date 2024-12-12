@@ -8,7 +8,7 @@ var server = createServer(app);
 var crypto = require("crypto");
 const { error } = require("node:console");
 
-const { Partie } = require('./private/js/partie');
+const Partie = require('./private/js/partie');
 
 /************************ SETUP EXPRESS *************************/
 app.set("view engine", "ejs");
@@ -48,11 +48,11 @@ app.get("/jeu", (req, res) => {
         utilisateurs = {
             "cbf87ed0-977d-407d-8078-d4291ffbcc1e": {
                 "username": "mathéo",
-                "socket.id": "Y5Pg7qO3oRMXJ9BXAAAB"
+                "socket": 
             },
             "64ccbedc-47b7-4b95-9c6b-bf965fcfaaa6": {
                 "username": "toto",
-                "socket.id": "kGqLN1Rn1T3EFYPcAAAC"
+                "socket": 
             }
         }
 
@@ -98,11 +98,11 @@ app.all('*', (req, res) => {
     rooms = {
         "room-0": {
             "joueurs": ["cbf87ed0-977d-407d-8078-d4291ffbcc1e", 64ccbedc-47b7-4b95-9c6b-bf965fcfaaa6],
-            "status": "attente" | "enJeu" | "fin"
+            "status": "attente" | "enJeu"
         },
         "room-1": {
             "joueurs" : ["7069a2b1-4a85-4507-9ccd-5cfe773084c0", 14c6156edc-47e7-4bg5-9c1b-bf961651aaa6],
-            "status": "attente" | "enJeu" | "fin"
+            "status": "attente" | "enJeu"
         },
     }
  */
@@ -112,12 +112,11 @@ var roomNumber = 0
 const status = {
     Attente: 0,
     EnJeu: 1,
-    Fin: 2
 }
 
 roomsManager = (uuid) => {
     for (let i in rooms) {
-        if (rooms[i]["joueurs"].length < maxPlayerPerRoom) {
+        if (rooms[i]["joueurs"].length < maxPlayerPerRoom && rooms[i]["status"] != status.EnJeu) {
             rooms[i]["joueurs"].push(uuid)
             return i
         }
@@ -143,6 +142,7 @@ locateJoueursRooms = (uuid) => {
 
 getListeJoueursRooms = (room) => {
     var listeJoueurs = []
+    if (!rooms[room]) return;
     for (let uuidJoueur in rooms[room]["joueurs"]) {
         listeJoueurs.push(utilisateurs[rooms[room]["joueurs"][uuidJoueur]]["username"])
     }
@@ -164,11 +164,11 @@ io.on("connection", (utilisateur) => {
     utilisateur.on("join", (uuid) => {
 
        try {
-            if (utilisateurs[uuid]["socket.id"]) {
+            if (utilisateurs[uuid]["socket"]) {
                 throw error
             }
             var username = utilisateurs[uuid]["username"]
-            utilisateurs[uuid]["socket.id"] = utilisateur.id
+            utilisateurs[uuid]["socket"] = utilisateur
             console.log(`${username} s'est connecté`);
             utilisateur.join(roomsManager(uuid));
             var room = locateJoueursRooms(uuid)
@@ -200,7 +200,7 @@ io.on("connection", (utilisateur) => {
         console.log(room)
         io.in(room).emit("start", {})
         rooms[room]["status"] = status.EnJeu
-        new Partie("301", io, getListeJoueurUuidRoom(room), room)
+        new Partie("301", io, utilisateurs, room)
     })
 
     // Il se peut que l'utilisateur se déconnecte un bref instant (reload de la page) 
@@ -208,7 +208,7 @@ io.on("connection", (utilisateur) => {
     // TODO attendre quelques secondes avant de détruire la session
     utilisateur.on('disconnect', () => {
         for (const key in utilisateurs) {
-            if (utilisateurs[key]["socket.id"] == utilisateur.id) {
+            if (utilisateurs[key]["socket"] == utilisateur) {
                 var uuid = key
                 break
             }
@@ -217,19 +217,20 @@ io.on("connection", (utilisateur) => {
             return
         }
         console.log(`${utilisateurs[uuid]["username"]} s'est deconnecté`);
-        var roomJoueur = locateJoueursRooms(uuid)
+        var room = locateJoueursRooms(uuid)
 
-        var positionJoueurRoom = rooms[roomJoueur]["joueurs"].indexOf(uuid)
+        var positionJoueurRoom = rooms[room]["joueurs"].indexOf(uuid)
 
         if (positionJoueurRoom > -1) {
-            rooms[roomJoueur]["joueurs"].splice(positionJoueurRoom, 1);
+            rooms[room]["joueurs"].splice(positionJoueurRoom, 1);
         }
 
         delete utilisateurs[uuid]
 
-        if (rooms[roomJoueur]["joueurs"].length == 0) {
-            delete rooms[roomJoueur]
+        if (rooms[room]["joueurs"].length == 0) {
+            delete rooms[room]
         }
+        io.in(room).emit("liste-joueurs", getListeJoueursRooms(room))
 
     })
 });
