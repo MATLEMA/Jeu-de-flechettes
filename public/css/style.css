@@ -37,7 +37,11 @@ body {
 
 ul {
     list-style-type: none;
-  }
+}
+
+#regle-liste {
+    list-style-type: circle;
+}
 
 #header{
     background: linear-gradient(to bottom, rgb(255, 255, 255) 0%, rgba(255, 255, 255, 0.98) 100%);;

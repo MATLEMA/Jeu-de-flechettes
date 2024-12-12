@@ -47,6 +47,32 @@
 
     <%- include('../partials/footer.ejs'); %>
 
+    <!-- MODAL fenetre d'informations règles -->
+    <div class="modal fade" id="infoModal301" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="infoModalLabel">Règles 301</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Le 301 double-out est une variante de jeu de flechettes avec quelques règles simples :
+                <ul id="regle-liste">
+                    <li>Chaque joueur commence avec 301 points</li>
+                    <li>Les tours se passent en volée (tour de trois lancé)</li>
+                    <li>Chaque lancé, on soustrait les points marqués du score du joueur</li>
+                    <li>Il faut atteindre précisément 0 points</li>
+                    <li>Le dernier tir doit être dans un double</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
 </body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.dev.js"></script>
 <script>
@@ -115,7 +141,6 @@
 
     socket.on("liste-joueurs", (donnees) => {
         listeJoueur.textContent = "";
-        console.log(donnees);
         for (let joueur in donnees) {
             const ligne = document.createElement("li");
             ligne.textContent = `${donnees[joueur]}: `;
@@ -128,7 +153,6 @@
 
     socket.on("modifier-score", (id, score) => {
         var span = document.getElementById(id);
-        console.log(id, score)
         if (!span) return;
 
         span.textContent = score
@@ -136,7 +160,6 @@
 
     socket.on("tonTour", () => {
         const envoyerPosition = (event) => {
-            console.log(event)
             const position = [event.offsetX - vibration.decalageX, event.offsetY - vibration.decalageY];
             socket.emit("positionClick", [objetCible.milieuCible, objetCible.rayonMax, position, objetCible.informationScale]);
             cible.removeEventListener("click", envoyerPosition);

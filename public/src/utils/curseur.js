@@ -46,10 +46,10 @@ export class Vibration {
             decalageY = decalageY * -1;
         };
 
-        this.#decalageX = decalageX * (rayonMax * 0)
-        this.#decalageY = decalageY * (rayonMax * 0)
-        decalageX = this.#centreImage + decalageX * (rayonMax * 0);
-        decalageY = this.#centreImage + decalageY * (rayonMax * 0);
+        this.#decalageX = decalageX * (rayonMax * 0.05)
+        this.#decalageY = decalageY * (rayonMax * 0.05)
+        decalageX = this.#centreImage + decalageX * (rayonMax * 0.05);
+        decalageY = this.#centreImage + decalageY * (rayonMax * 0.05);
 
         cible.style.cursor = `url('${this.curseurPrecharge.src}') ${decalageX} ${decalageY}, auto`;
     }
