@@ -1,9 +1,11 @@
 export class Joueur {
     #pseudo;
     #score;
-    constructor(pseudo) {
+    #uuid;
+    constructor(uuid, pseudo, score) {
+        this.#uuid = uuid
         this.#pseudo = pseudo;
-        this.#score = -1;
+        this.#score = score;
     }
 
     get score() {
@@ -23,6 +25,14 @@ export class Joueur {
 
     set pseudo(pseudo) {
         this.#pseudo = pseudo;
+    }
+
+    get uuid() {
+        return this.#uuid;
+    }
+
+    set uuid(uuid) {
+        this.#uuid = uuid;
     }
 
     toString() {

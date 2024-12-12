@@ -22,10 +22,6 @@
                 <div class="p-0 col-12 col-md-6 container" id="partie">
                     <div id="afficheur" style="width: 504px;height: 104px" class="row">
                         <ul id="listeJoueur" class="m-0 p-0 col-4 align-self-start">
-                            <li id="joueur1">Bonjour <span id="scoreJoueur1"></span></li>
-                            <li id="joueur2">Bonjour <span id="scoreJoueur2"></span></li>
-                            <li id="joueur3">Bonjour <span id="scoreJoueur3"></span></li>
-                            <li id="joueur4">Bonjour <span id="scoreJoueur4"></span></li>
                         </ul>
                         <div class="col-4 align-self-center d-flex flex-column align-items-center">
                             <span>Au tour de <span id="tourDe"></span></span>
@@ -37,7 +33,7 @@
                         <svg id="cible" viewBox="0 0 500 500" style="width: 504px;height: 504px"></svg>
                     </div>
                 </div>
-                <button class="btn btn-primary my-2" id="start-btn" onclick="this.style.visibility='hidden';">Lancer la partie</button>
+                <button class="btn btn-primary my-2" id="start-btn">Lancer la partie</button>
                 <div id="chat" class="d-flex p-0 col-12 mt-1 flex-column">
                     <ul id="messages" class="flex-column p-2"></ul>
                     <form id="chat-form" class="text-center">
@@ -58,6 +54,10 @@
     const form = document.getElementById("chat-form");
     const input = document.getElementById("input");
     const messages = document.getElementById("messages")
+    const startBtn = document.getElementById("start-btn")
+    const listeJoueur = document.getElementById("listeJoueur")
+    const tourDe = document.getElementById("tourDe")
+
 
     // Cherche l'uuid dans les cookies
     var cookieString = document.cookie
@@ -79,8 +79,12 @@
         }
     });
 
+    socket.on("tourDe", (auTourDe) => {
+        tourDe.textContent = auTourDe
+    })
+
     socket.on("chat message", (msg) => {
-        const item = document.createElement('li');
+        const item = document.createElement("li");
         item.textContent = msg;
         messages.appendChild(item);
         if (messages) {
@@ -88,6 +92,34 @@
         }
     });
 
+    hideStartBtn = () => {
+        console.log("hide")
+        startBtn.style.visibility='hidden'
+    }
+
+    startBtn.addEventListener("click", () => {
+        console.log("click")
+        socket.emit("start", uuid)
+    }, {once : true})
+
+    socket.on("start", () => {
+        console.log("clickbroadcast")
+        hideStartBtn()
+    })
+
+    socket.on("liste-joueurs", (donnees) => {
+        listeJoueur = ""
+        for (let joueur in donnees) {
+            console.log(donnees[joueur])
+            const ligne = document.createElement("li")
+            ligne.textContent = `${donnees[joueur]}`
+            listeJoueur.appendChild(ligne)
+        }
+    })
+
+    socket.on("redirect", (destination) => {
+        window.location.href = destination;
+    })
 </script>
 
 </html>

@@ -5,7 +5,10 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 var app = express();
 var server = createServer(app);
-var crypto = require("crypto")
+var crypto = require("crypto");
+const { error } = require("node:console");
+
+const { Partie } = require('./private/js/partie');
 
 /************************ SETUP EXPRESS *************************/
 app.set("view engine", "ejs");
@@ -19,9 +22,9 @@ const io = require("socket.io")(server, {
         origin: "http://localhost:8080",
         methods: ["GET", "POST"],
         transports: ["websocket", "polling"],
-        credentials: true
+        credentials: true,
     },
-    allowEIO3: true
+    allowEIO3: true,
 });
 
 /************************ PAGES HANDLING *************************/
@@ -59,7 +62,7 @@ var utilisateurs = {}
 /* Gère les noms d'utilisateurs */
 app.post("/login", (req, res) => {
     isValid = (username) => {
-        if (username.length <= 30) {
+        if (username.length <= 15) {
             return true
         } else {
             return false
@@ -69,7 +72,10 @@ app.post("/login", (req, res) => {
 
     if (username && !Object.values(utilisateurs).includes(username) && isValid(username)) {
         const uuid = crypto.randomUUID()
-        utilisateurs[uuid] = {"username": username}
+        utilisateurs[uuid] = {
+            "username": username,
+            "score": -1
+        }
         res.cookie("uuid", uuid)
         res.redirect("/jeu");
     } else {
@@ -103,6 +109,11 @@ app.all('*', (req, res) => {
 var maxPlayerPerRoom = 4
 var rooms = {}
 var roomNumber = 0
+const status = {
+    Attente: 0,
+    EnJeu: 1,
+    Fin: 2
+}
 
 roomsManager = (uuid) => {
     for (let i in rooms) {
@@ -110,9 +121,13 @@ roomsManager = (uuid) => {
             rooms[i]["joueurs"].push(uuid)
             return i
         }
+
     }
     // Si aucune room n'est disponible
-    rooms[`room-${roomNumber}`] = {joueurs: [uuid]}
+    rooms[`room-${roomNumber}`] = {
+        "joueurs": [uuid],
+        "status": status.Attente
+    }
     roomNumber++
     return `room-${roomNumber - 1}`
 }
@@ -125,32 +140,69 @@ locateJoueursRooms = (uuid) => {
     }
     return null
 }
+
+getListeJoueursRooms = (room) => {
+    var listeJoueurs = []
+    for (let uuidJoueur in rooms[room]["joueurs"]) {
+        listeJoueurs.push(utilisateurs[rooms[room]["joueurs"][uuidJoueur]]["username"])
+    }
+    return listeJoueurs
+}
+
+getListeJoueurUuidRoom = (room) => {
+    var listeJoueursUUID = {}
+    for (let uuidJoueur in rooms[room]["joueurs"]) {
+        listeJoueursUUID[rooms[room]["joueurs"][uuidJoueur]] = utilisateurs[rooms[room]["joueurs"][uuidJoueur]]["username"]
+    }
+    return listeJoueursUUID
+}
+startJeu = () => {
+
+}
 io.on("connection", (utilisateur) => {
 
     utilisateur.on("join", (uuid) => {
-        if (!utilisateurs[uuid]) {
-            utilisateur.emit("redirect", "/");
-            return
+
+       try {
+            if (utilisateurs[uuid]["socket.id"]) {
+                throw error
+            }
+            var username = utilisateurs[uuid]["username"]
+            utilisateurs[uuid]["socket.id"] = utilisateur.id
+            console.log(`${username} s'est connecté`);
+            utilisateur.join(roomsManager(uuid));
+            var room = locateJoueursRooms(uuid)
+            io.in(room).emit("liste-joueurs", getListeJoueursRooms(room))
         }
-        var username = utilisateurs[uuid]["username"]
-        utilisateurs[uuid]["socket.id"] = utilisateur.id
-        console.log(`${username} s'est connecté`);
-        utilisateur.emit("redirect", "/jeu");
-        utilisateur.join(roomsManager(uuid));
+        catch(err) {
+            // utilisateur est deconnecté
+            utilisateur.emit("redirect", "/")
+        }
     });
 
     utilisateur.on("chat message", (object) => {
-        if (!utilisateurs[uuid]) {
-            utilisateur.emit("redirect", "/");
-            return
+        try {
+            var uuid = object["sender"]
+            var msg = object["msg"]
+            var username = utilisateurs[uuid]["username"]
+            console.log(`message dans (${locateJoueursRooms(uuid)}): ${username}> ${msg}`);
+            io.in(locateJoueursRooms(uuid)).emit("chat message", `${username}> ${msg}`);
         }
-        var uuid = object["sender"]
-        var msg = object["msg"]
-        var username = utilisateurs[uuid]["username"]
-        console.log(`message dans (${locateJoueursRooms(uuid)}): ${username}> ${msg}`);
-        io.in(locateJoueursRooms(uuid)).emit("chat message", `${username}> ${msg}`);
+        catch(err) {
+            // utilisateur est deconnecté
+            utilisateur.emit("redirect", "/")
+        }
     });
     
+    utilisateur.on("start", (uuid) => {
+        console.log("serverside")
+        var room = locateJoueursRooms(uuid)
+        console.log(room)
+        io.in(room).emit("start", {})
+        rooms[room]["status"] = status.EnJeu
+        new Partie("301", io, getListeJoueurUuidRoom(room), room)
+    })
+
     // Il se peut que l'utilisateur se déconnecte un bref instant (reload de la page) 
     // Après reload il y a une chance que l'utilisateur perde sa session
     // TODO attendre quelques secondes avant de détruire la session
@@ -166,15 +218,19 @@ io.on("connection", (utilisateur) => {
         }
         console.log(`${utilisateurs[uuid]["username"]} s'est deconnecté`);
         var roomJoueur = locateJoueursRooms(uuid)
+
         var positionJoueurRoom = rooms[roomJoueur]["joueurs"].indexOf(uuid)
+
         if (positionJoueurRoom > -1) {
             rooms[roomJoueur]["joueurs"].splice(positionJoueurRoom, 1);
         }
+
         delete utilisateurs[uuid]
 
         if (rooms[roomJoueur]["joueurs"].length == 0) {
             delete rooms[roomJoueur]
         }
+
     })
 });
 
