@@ -112,13 +112,6 @@ const status = {
     EnJeu: 1,
 };
 
-/*
-    Liste des attentes avant déconnexion
-    Lors d'une déconnexion l'utilisateur va trigger un timeout de 10s
-    si l'utilisateur se reconnecte il récupère sa session si non il la perd
-*/
-var timeoutDeconnexion = {};
-
 roomsManager = (uuid) => {
     for (let i in rooms) {
         if (rooms[i]["joueurs"].length < maxPlayerPerRoom && rooms[i]["status"] != status.EnJeu) {
@@ -167,19 +160,7 @@ io.on("connection", (utilisateur) => {
     utilisateur.on("join", (uuid) => {
 
        try {
-            if (timeoutDeconnexion[uuid]) {
-                clearTimeout(timeoutDeconnexion[uuid]);
-                delete timeoutDeconnexion[uuid];
-                console.log(`${utilisateurs[uuid]["username"]} s'est reconnecté`);
-                utilisateurs[uuid]["socket"] = utilisateur;
-                var room = locateJoueursRooms(uuid)
-                utilisateur.join(room)
-                io.in(room).emit("liste-joueurs", getListeJoueursRooms(room))
-                return
-            }
-
             if (utilisateurs[uuid]["socket"]) {
-                throw error;
                 throw new Error("L'utilisateur n'est pas dans la tables des utilisateurs");
             }
 
@@ -192,7 +173,6 @@ io.on("connection", (utilisateur) => {
         }
         catch(err) {
             // utilisateur est deconnecté
-            console.log(err, err.stack)
             utilisateur.emit("redirect", "/");
         }
     });
@@ -218,7 +198,6 @@ io.on("connection", (utilisateur) => {
         console.log(`${room} à commencé sa partie`);
         io.in(room).emit("start", {});
         rooms[room]["status"] = status.EnJeu;
-        new Partie("301", io, utilisateurs, room);
         var joueur = {}
         for (let [uuid, value] of Object.entries(utilisateurs)) {
             if (Object.values(rooms[room]["joueurs"]).includes(uuid)) {
@@ -241,23 +220,20 @@ io.on("connection", (utilisateur) => {
 
         console.log(`${utilisateurs[uuid]["username"]} s'est deconnecté`);
 
-        timeoutDeconnexion[uuid] = setTimeout(() => {
-            console.log(`${utilisateurs[uuid]["username"]} à été retiré`);
-            var room = locateJoueursRooms(uuid);
+        var room = locateJoueursRooms(uuid);
 
-            var positionJoueurRoom = rooms[room]["joueurs"].indexOf(uuid);
+        var positionJoueurRoom = rooms[room]["joueurs"].indexOf(uuid);
 
-            if (positionJoueurRoom > -1) {
-                rooms[room]["joueurs"].splice(positionJoueurRoom, 1);
-            };
+        if (positionJoueurRoom > -1) {
+            rooms[room]["joueurs"].splice(positionJoueurRoom, 1);
+        };
 
-            delete utilisateurs[uuid];
+        delete utilisateurs[uuid];
 
-            if (rooms[room]["joueurs"].length == 0) {
-                delete rooms[room];
-            }
-            io.in(room).emit("liste-joueurs", getListeJoueursRooms(room));
-        }, 10000);
+        if (rooms[room]["joueurs"].length == 0) {
+            delete rooms[room];
+        }
+        io.in(room).emit("liste-joueurs", getListeJoueursRooms(room));
     })
 });
 

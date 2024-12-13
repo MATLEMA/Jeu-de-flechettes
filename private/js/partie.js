@@ -8,7 +8,6 @@ class Partie {
     #joueurs
     #room
     #classement = []
-    tourDe
 
     /**
      * Instancie Partie
