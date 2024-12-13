@@ -6,8 +6,6 @@ const cookieParser = require("cookie-parser");
 var app = express();
 var server = createServer(app);
 var crypto = require("crypto");
-const { error } = require("node:console");
-
 const Partie = require('./private/js/partie');
 
 /************************ SETUP EXPRESS *************************/
@@ -182,6 +180,7 @@ io.on("connection", (utilisateur) => {
 
             if (utilisateurs[uuid]["socket"]) {
                 throw error;
+                throw new Error("L'utilisateur n'est pas dans la tables des utilisateurs");
             }
 
             var username = utilisateurs[uuid]["username"];
@@ -216,14 +215,21 @@ io.on("connection", (utilisateur) => {
         console.log("serverside");
         var room = locateJoueursRooms(uuid);
         console.log(room);
+        console.log(`${room} à commencé sa partie`);
         io.in(room).emit("start", {});
         rooms[room]["status"] = status.EnJeu;
         new Partie("301", io, utilisateurs, room);
+        var joueur = {}
+        for (let [uuid, value] of Object.entries(utilisateurs)) {
+            if (Object.values(rooms[room]["joueurs"]).includes(uuid)) {
+                joueur[uuid] = value
+            }
+        }
+        rooms[room]["partie"] = new Partie("301", io, joueur, room);
     })
 
     // Il se peut que l'utilisateur se déconnecte un bref instant (reload de la page) 
     // Après reload il y a une chance que l'utilisateur perde sa session
-    // TODO attendre quelques secondes avant de détruire la session
     utilisateur.on('disconnect', () => {
         for (const key in utilisateurs) {
             if (utilisateurs[key]["socket"] == utilisateur) {

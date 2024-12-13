@@ -8,6 +8,15 @@ class Partie {
     #joueurs
     #room
     #classement = []
+    tourDe
+
+    /**
+     * Instancie Partie
+     * @param {String} typePartie 
+     * @param {Socket} io 
+     * @param {Object} utilisateurs 
+     * @param {String} room 
+     */
     constructor(typePartie, io, utilisateurs, room) {
         this.#io = io
         this.#typePartie = typePartie;

@@ -122,12 +122,10 @@
     });
 
     hideStartBtn = () => {
-        console.log("hide")
         startBtn.style.visibility='hidden'
     }
 
     startBtn.addEventListener("click", () => {
-        console.log("click")
         socket.emit("start", uuid)
     }, {once : true})
 
