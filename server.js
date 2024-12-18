@@ -97,10 +97,12 @@ app.all('*', (req, res) => {
         "room-0": {
             "joueurs": ["cbf87ed0-977d-407d-8078-d4291ffbcc1e", 64ccbedc-47b7-4b95-9c6b-bf965fcfaaa6],
             "status": "attente" | "enJeu"
+            "partie": Partie {} | null
         },
         "room-1": {
             "joueurs" : ["7069a2b1-4a85-4507-9ccd-5cfe773084c0", 14c6156edc-47e7-4bg5-9c1b-bf961651aaa6],
             "status": "attente" | "enJeu"
+            "partie": Partie {} | null
         },
     }
  */

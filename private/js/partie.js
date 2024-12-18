@@ -162,6 +162,7 @@ class Partie {
             utilisateur.once("positionClick", reponse);
             
             utilisateur.emit("tonTour");
+
         })
     }
 
@@ -208,7 +209,18 @@ class Partie {
         this.#io.in(this.#room).emit("modifier-score", joueur.pseudo, score ?? joueur.score)
     }
 
-    
+    enleverJoueurPartie(joueur) {
+        var indexJoueur = null
+        for (const key in object) {
+            if (joueur == this.#joueurs[key]) {
+                indexJoueur = key
+                break
+            }
+        }
+        if (!indexJoueur) return;
+
+        delete this.#joueurs[key]
+    }
 }
 
 module.exports = Partie;
